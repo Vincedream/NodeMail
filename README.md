@@ -1,3 +1,4 @@
+# 用Node EJS写一个爬虫脚本每天定时给心爱的她发一封暖心邮件
 ## 写在前面
 自从用邮箱注册了很多账号后，便会收到诸如以下类似的邮件,刚开始还以为是一张图片，后来仔细一看不是图片呀，好像还是HTML呀，于是好奇宝宝我Google一下，查阅多篇资料后总结出怎么用前端知识和Node做一个这样的“邮件网页”。
 ![image](http://p0ml8s4qd.bkt.clouddn.com/CF951178-3DFD-43D6-9A68-9DBD2706C98B.png)
@@ -258,7 +259,7 @@ transporter.sendMail(mailOptions, (error, info) => {
 ## 安装与使用
 如果你觉得这封邮件的内容适合你发送的对象，可以按照以下步骤，改少量参数即可运行程序；
 
-1. git clone 
+1. git clone https://github.com/Vincedream/NodeMail
 2. 打开main.js，修改配置项
 
 ```
@@ -327,5 +328,6 @@ let EmialMinminute= 30;
 ## 最后
 冬天到了，是不是也该用程序员的专业知识给身边的人带来一些温暖呢，源代码与demo已经放到github上，要不试一试？
 
+GitHub：[https://github.com/Vincedream/NodeMail](https://github.com/Vincedream/NodeMail)
 
 

@@ -1,0 +1,26 @@
+{
+    "apps": [
+        {
+            "name":"NodeMail",  //项目名称
+            "script":"main.js",  //项目入口文件
+            "env": {
+                "COMMON_VARIABLE": "true"
+            },
+            "env_production":{
+                "NODE_ENV": "NodeMail"
+            }
+        }
+    ],
+    "deploy": {
+        "NodeMail": {
+            "user": "user账号",  //登录服务器的user账号
+            "host": ["公网ip地址"],  //登录服务器的公网ip地址
+            "ref": "origin/master",  //远端名称及分支名
+            "repo": "git仓库地址", //git仓库地址也就是这个项目的仓库地址
+            "path": "/home/vince/www/NodeMail",  //远程服务器部署目录，需要填写user具备写入权限的目录
+            "ssh_options": "StrictHostKeyChecking=no", //ssh检查设置
+            //部署后执行的命令
+            "post-deploy": "npm install && pm2 startOrRestart ecosystem.json --env production"
+        }
+    }
+}

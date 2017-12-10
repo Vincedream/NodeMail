@@ -169,6 +169,8 @@ function sendMail() {
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
       return console.log(error);
+      HtmlData = {};
+      getData(); //当登录、发送邮件失败，再次执行任务;
     }
     console.log("Message sent: %s", info.messageId);
     HtmlData = {}; //清除数据以便下次再次发送

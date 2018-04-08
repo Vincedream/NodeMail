@@ -1,7 +1,12 @@
-# 用Node EJS写一个爬虫脚本每天定时给心爱的她发一封暖心邮件
+
 ## 写在前面
+
+
 自从用邮箱注册了很多账号后，便会收到诸如以下类似的邮件,刚开始还以为是一张图片，后来仔细一看不是图片呀，好像还是HTML呀，于是好奇宝宝我Google一下，查阅多篇资料后总结出怎么用前端知识和Node做一个这样的“邮件网页”。
+
 ![image](http://p0ml8s4qd.bkt.clouddn.com/CF951178-3DFD-43D6-9A68-9DBD2706C98B.png)
+
+
 
 ## 确认主题
 知道怎么实现功能后，思考着我该写什么主题呢，用一个HTML模板随便给小伙伴们发个邮件炫个技？不行，作为一个很cool的程序员怎么能这么low呢，最近天气变化幅度大，温度捉摸不定，女朋友总是抱怨穿少了又冷穿多了又热，嗨呀，要不我就写个每天定时给宝宝发送天气预报的邮件，另外想起宝宝喜欢看ONE·一个这个APP上的每日更新，要不发天气预报的同时，再附赠一个“ONE的每日订阅”？机智又浪漫，开始搬砖～
@@ -196,66 +201,106 @@ var j = schedule.scheduleJob(rule, function(){
 ## 思路与步骤
 
 当所有的问题都解决后，便是开始结合代码成一段完整的程序，思路很简单，我们来逐步分析：
-1. 初始化用一个对象来存储所有爬取的数据
+1. 由于获取数据是异步的，并且不能判断出哪个先获取到数据，这个是可以将获取数据的函数封装成一个Promise对象，最后在一起用Promise.all来判断所有数据获取完毕，再发送邮件
 
 ```
-let HtmlData={
-    
- }
-```
-2. 将爬取数据的代码封装到一个function中,并且将数据添加到HtmlData中
+// 其中一个数据获取函数，其他的也是类似
+function getOneData(){
+    let p = new Promise(function(resolve,reject){
+        superagent.get(OneUrl).end(function(err, res) {
+            if (err) {
+                reject(err);
+            }
+            let $ = cheerio.load(res.text);
+            let selectItem = $("#carousel-one .carousel-inner .item");
+            let todayOne = selectItem[0];
+            let todayOneData = {
+              imgUrl: $(todayOne)
+                .find(".fp-one-imagen")
+                .attr("src"),
+              type: $(todayOne)
+                .find(".fp-one-imagen-footer")
+                .text()
+                .replace(/(^\s*)|(\s*$)/g, ""),
+              text: $(todayOne)
+                .find(".fp-one-cita")
+                .text()
+                .replace(/(^\s*)|(\s*$)/g, "")
+            };
+            resolve(todayOneData)
+          });
+    })
+    return p
+}
 
 ```
-function getData(){
-    superagent.get(OneUrl).end(function(err,res){
-        ...
-        HtmlData["todayOneData"] =todayOneData;
-        checkOver(); //检测函数
-    }
-    superagent.get(WeatherUrl).end(function(err,res){
-        ...
-        HtmlData["threeDaysData"] =threeDaysData;
-        checkOver(); //检测函数
-    }
-    
-{
-```
-3. 由于superagent是个异步函数，所以并不会按照顺序执行，我们并不能确定执行到那个superagent才完成所有数据的获取，这个时候我们设置一个检测函数，检测HtmlData中数据是否完备，如果完备，则进入下一个步骤：数据填充到EJS生成HTML
+2. 将爬取数据统一处理，作为EJS的参数，发送邮件模板。
 
 ```
- function checkOver(){
-    if(HtmlData.todayOneData!==undefined&&HtmlData.threeDaysData!==undefined&&HtmlData.weatherTip!==undefined){
-     console.log(HtmlData);
-     sendMail(); //下一步
-    }
- }
-```
-4. 将爬取到的数据填充到EJS模版，生成html
+
+function getAllDataAndSendMail(){
+    let HtmlData = {};
+    // how long with
+    let today = new Date();
+    let initDay = new Date(startDay);
+    let lastDay = Math.floor((today - initDay) / 1000 / 60 / 60 / 24);
+    let todaystr =
+      today.getFullYear() +
+      " / " +
+      (today.getMonth() + 1) +
+      " / " +
+      today.getDate();
+    HtmlData["lastDay"] = lastDay;
+    HtmlData["todaystr"] = todaystr;
+
+    Promise.all([getOneData(),getWeatherTips(),getWeatherData()]).then(
+        function(data){
+            HtmlData["todayOneData"] = data[0];
+            HtmlData["weatherTip"] = data[1];
+            HtmlData["threeDaysData"] = data[2];
+            sendMail(HtmlData)
+        }
+    ).catch(function(err){
+        getAllDataAndSendMail() //再次获取
+        console.log('获取数据失败： ',err);
+    })
+}
 
 ```
-const template = ejs.compile(fs.readFileSync(path.resolve(__dirname, 'email.ejs'), 'utf8'));
-const html = template(HtmlData);
-```
-5. 发送邮件,别忘了发送邮件后要清空HtmlData数据，这样就不会导致第二次执行的时候，check()检测HtmlData已经完备，未获取数据便发送邮件。
+3. 发送邮件具体代码
+
 ```
 
-let transporter = nodemailer.createTransport({
-    ...
-  });
-
-let mailOptions = {
-    ...  
-  };
+function sendMail(HtmlData) {
+    const template = ejs.compile(
+      fs.readFileSync(path.resolve(__dirname, "email.ejs"), "utf8")
+    );
+    const html = template(HtmlData);
   
-//发送邮件
-transporter.sendMail(mailOptions, (error, info) => {  
-    if (error) {
-    return console.log(error);
-    }
-    console.log('邮件发送成功 ID：', info.messageId);
-    HtmlData={} //清除数据以便下次再次发送
-});  
+    let transporter = nodemailer.createTransport({
+      service: EmianService,
+      port: 465,
+      secureConnection: true,
+      auth: EamilAuth
+    });
+  
+    let mailOptions = {
+      from: EmailFrom,
+      to: EmailTo,
+      subject: EmailSubject,
+      html: html
+    };
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.log(error);
+        sendMail(HtmlData); //再次发送
+      }
+      console.log("Message sent: %s", info.messageId);
+    });
+  }
 ```
+
+
 ## 安装与使用
 如果你觉得这封邮件的内容适合你发送的对象，可以按照以下步骤，改少量参数即可运行程序；
 
@@ -291,7 +336,7 @@ let EmialMinminute= 30;
 3. 终端输入`npm install`安装依赖，再输入`node main.js`，运行脚本，当然你的电脑不可能不休眠，建议你部署到你的云服务器上运行。
 
 ## 用PM2部署到云服务器
-如果你还没有部署自己的云服务器，可以看我这篇博文:[手摸手教你从购买服务器到部署第一个Node项目](http://www.vince.studio/2017/12/08/%E6%89%8B%E6%91%B8%E6%89%8B%E6%95%99%E4%BD%A0%E4%BB%8E%E8%B4%AD%E4%B9%B0%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%88%B0%E9%83%A8%E7%BD%B2%E7%AC%AC%E4%B8%80%E4%B8%AANode%E9%A1%B9%E7%9B%AE/)不熟悉PM2的部署，可以查看我的另外一篇文章：[用PM2一键部署你的Node项目](http://www.vince.studio/2017/12/09/%E7%94%A8PM2%E4%B8%80%E9%94%AE%E9%83%A8%E7%BD%B2%E4%BD%A0%E7%9A%84Node%E9%A1%B9%E7%9B%AE/),本地代码完成后将删除掉`node_modules`，这样本地上传代码和服务器拉取代码就不会耗时太久，因为PM2已经在服务器上为你做了`npm install`这件事，PM2部署配置文件：
+如果你还没有部署自己的云服务器，可以看我这篇博文:[手摸手教你从购买服务器到部署第一个Node项目](https://vince.studio/post/5a31544e4c09fb508714615f)不熟悉PM2的部署，可以查看我的另外一篇文章：[用PM2一键部署你的Node项目](https://vince.studio/post/5a31544e4c09fb508714615f),本地代码完成后将删除掉`node_modules`，这样本地上传代码和服务器拉取代码就不会耗时太久，因为PM2已经在服务器上为你做了`npm install`这件事，PM2部署配置文件：
 
 
 ```

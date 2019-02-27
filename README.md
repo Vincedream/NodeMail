@@ -4,7 +4,7 @@
 
 自从用邮箱注册了很多账号后，便会收到诸如以下类似的邮件,刚开始还以为是一张图片，后来仔细一看不是图片呀，好像还是HTML呀，于是好奇宝宝我Google一下，查阅多篇资料后总结出怎么用前端知识和Node做一个这样的“邮件网页”。
 
-![image](http://p0ml8s4qd.bkt.clouddn.com/CF951178-3DFD-43D6-9A68-9DBD2706C98B.png)
+![image](http://blogpic.vince.xin/CF951178-3DFD-43D6-9A68-9DBD2706C98B.png)
 
 
 
@@ -15,7 +15,7 @@
 
 本来是想最后放效果图的，怕你们看到一半就没兴趣了，就在前面剧透一下我最后做出来的效果图吧～
 
-![image](http://p0ml8s4qd.bkt.clouddn.com/2C971663-4C02-4CDD-8E13-1C71B8170EB4.png)
+![image](http://blogpic.vince.xin/2C971663-4C02-4CDD-8E13-1C71B8170EB4.png)
 
 ## 待解决的问题
 **1. 如何获取天气预报和ONE上的data？**
@@ -41,24 +41,26 @@
 这里我们使用到`superagent`和`cheerio`组合来实现爬虫：
 
 - 分析网页DOM结构，如下图所示：
-![image](http://p0ml8s4qd.bkt.clouddn.com/B7509558-D988-4818-8969-77FE5028882A.png)
+
+![image](http://blogpic.vince.xin/B7509558-D988-4818-8969-77FE5028882A.png)
+
 - 用superagent来获取指定网页的所有DOM：
 
-```
+``` javascript
 superagent.get(URL).end(function(err,res){
     //
 }
 ```
 - 用cheerio来筛选superagent获取到的DOM，取出需要的DOM
 
-```
+``` javascript
 imgUrl:$(todayOne).find('.fp-one-imagen').attr('src'),
 type:$(todayOne).find('.fp-one-imagen-footer').text().replace(/(^\s*)|(\s*$)/g, ""),
 text:$(todayOne).find('.fp-one-cita').text().replace(/(^\s*)|(\s*$)/g, "")
 ```
 **以下就是爬取ONE的代码，天气预报网页也是一个道理：**
 
-```
+``` javascript
 const superagent = require('superagent'); //发送网络请求获取DOM
 const cheerio = require('cheerio'); //能够像Jquery一样方便获取DOM节点
 
@@ -85,7 +87,7 @@ superagent.get(OneUrl).end(function(err,res){
 
 - app.js
 
-```
+``` javascript
 const ejs = require('ejs'); //ejs模版引擎
 const fs  = require('fs'); //文件读写
 const path = require('path'); //路径配置
@@ -106,7 +108,7 @@ console.log(html)
 
 - mail.ejs
 
-```
+``` javascript
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -126,7 +128,7 @@ console.log(html)
 ### 用Node发送邮件
 这里我们可以发送纯text也可以发送html，注意的是邮箱密码不是你登录邮箱的密码，而是smtp授权码，什么是smtp授权码呢？就是你的邮箱账号可以使用这个smtp授权码在别的地方发邮件，一般smtp授权码在邮箱官网的设置中可以看的到，设置如下注释。
 
-```
+``` javascript
 const nodemailer = require('nodemailer'); //发送邮件的node插件
 
 let transporter = nodemailer.createTransport({
@@ -159,7 +161,7 @@ transporter.sendMail(mailOptions, (error, info) => {
 这里我们用到了`node-schedule`来定时执行任务，示例如下：
 
 
-```
+``` javascript
 var schedule = require("node-schedule");  
 
 //1. 确定的时间执行
@@ -203,7 +205,7 @@ var j = schedule.scheduleJob(rule, function(){
 当所有的问题都解决后，便是开始结合代码成一段完整的程序，思路很简单，我们来逐步分析：
 1. 由于获取数据是异步的，并且不能判断出哪个先获取到数据，这个是可以将获取数据的函数封装成一个Promise对象，最后在一起用Promise.all来判断所有数据获取完毕，再发送邮件
 
-```
+``` javascript
 // 其中一个数据获取函数，其他的也是类似
 function getOneData(){
     let p = new Promise(function(resolve,reject){
@@ -236,7 +238,7 @@ function getOneData(){
 ```
 2. 将爬取数据统一处理，作为EJS的参数，发送邮件模板。
 
-```
+``` javascript
 
 function getAllDataAndSendMail(){
     let HtmlData = {};
@@ -269,7 +271,7 @@ function getAllDataAndSendMail(){
 ```
 3. 发送邮件具体代码
 
-```
+``` javascript
 
 function sendMail(HtmlData) {
     const template = ejs.compile(
@@ -290,7 +292,7 @@ function sendMail(HtmlData) {
       subject: EmailSubject,
       html: html
     };
-    transporter.sendMail(mailOptions, (error, info) => {
+    transporter.sendMail(mailOptions, (error, info={}) => {
       if (error) {
         console.log(error);
         sendMail(HtmlData); //再次发送
@@ -307,7 +309,7 @@ function sendMail(HtmlData) {
 1. git clone https://github.com/Vincedream/NodeMail
 2. 打开main.js，修改配置项
 
-```
+``` javascript
 //纪念日
 let startDay = "2016/6/24";
 
@@ -335,44 +337,8 @@ let EmialMinminute= 30;
 ```
 3. 终端输入`npm install`安装依赖，再输入`node main.js`，运行脚本，当然你的电脑不可能不休眠，建议你部署到你的云服务器上运行。
 
-## 用PM2部署到云服务器
-如果你还没有部署自己的云服务器，可以看我这篇博文:[手摸手教你从购买服务器到部署第一个Node项目](https://vince.studio/post/5a31544e4c09fb508714615f)不熟悉PM2的部署，可以查看我的另外一篇文章：[用PM2一键部署你的Node项目](https://vince.studio/post/5a31544e4c09fb508714615f),本地代码完成后将删除掉`node_modules`，这样本地上传代码和服务器拉取代码就不会耗时太久，因为PM2已经在服务器上为你做了`npm install`这件事，PM2部署配置文件：
-
-
-```
-{
-    "apps": [
-        {
-            "name":"NodeMail",  //项目名称
-            "script":"main.js",  //项目入口文件
-            "env": {
-                "COMMON_VARIABLE": "true"
-            },
-            "env_production":{
-                "NODE_ENV": "NodeMail"
-            }
-        }
-    ],
-    "deploy": {
-        "NodeMail": {
-            "user": "user账号",  //登录服务器的user账号
-            "host": ["公网ip地址"],  //登录服务器的公网ip地址
-            "ref": "origin/master",  //远端名称及分支名
-            "repo": "git仓库地址", //git仓库地址也就是这个项目的仓库地址
-            "path": "/home/vince/www/NodeMail",  //远程服务器部署目录，需要填写user具备写入权限的目录
-            "ssh_options": "StrictHostKeyChecking=no", //ssh检查设置
-            //部署后执行的命令
-            "post-deploy": "npm install && pm2 startOrRestart ecosystem.json --env production"
-        }
-    }
-}
-```
-
-
 
 ## 最后
 冬天到了，是不是也该用程序员的专业知识给身边的人带来一些温暖呢，源代码与demo已经放到github上，要不试一试？
 
 GitHub：[https://github.com/Vincedream/NodeMail](https://github.com/Vincedream/NodeMail)
-
-

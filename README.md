@@ -314,7 +314,7 @@ function sendMail(HtmlData) {
 let startDay = "2016/6/24";
 
 //当地拼音,需要在下面的墨迹天气url确认
-const local = "xiangtan";
+const local = "zhejiang/hangzhou";
 
 //发送者邮箱厂家
 let EmianService = "163";

@@ -10,7 +10,7 @@ const schedule = require("node-schedule"); //定时器任务库
 //纪念日
 let startDay = "2016/6/24";
 //当地拼音,需要在下面的墨迹天气url确认
-const local = "hangzhou";
+const local = "zhejiang/hangzhou";
 
 //发送者邮箱厂家
 let EmianService = "126";
@@ -33,7 +33,7 @@ let EmialMinminute= 20;
 
 // 爬取数据的url
 const OneUrl = "http://wufazhuce.com/";
-const WeatherUrl = "https://tianqi.moji.com/weather/china/zhejiang/" + local;
+const WeatherUrl = "https://tianqi.moji.com/weather/china/" + local;
 
 
 // 获取ONE内容

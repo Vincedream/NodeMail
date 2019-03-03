@@ -6,7 +6,7 @@ let transporter = nodemailer.createTransport({
     secureConnection: true, // SSL安全链接
     auth: {   //发送者的账户密码
       user: 'artistcoder@126.com', //账户
-      pass: 'huajinbo1997', //smtp授权码，到邮箱设置下获取
+      pass: 'xxxx', //smtp授权码，到邮箱设置下获取
     }
   });
 

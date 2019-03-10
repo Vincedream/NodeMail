@@ -29,7 +29,7 @@ let EmailSubject = "一封暖暖的小邮件";
 
 //每日发送时间
 let EmailHour = 10;
-let EmialMinminute= 10;
+let EmialMinminute= 20;
 
 // 爬取数据的url
 const OneUrl = "http://wufazhuce.com/";
@@ -198,7 +198,7 @@ function getAllDataAndSendMail(){
 
 let rule = new schedule.RecurrenceRule();
 rule.dayOfWeek = [0, new schedule.Range(1, 6)];
-rule.hour = EmailHour;
+//rule.hour = EmailHour;
 rule.minute = EmialMinminute;
 console.log('NodeMail: 开始等待目标时刻...')
 let j = schedule.scheduleJob(rule, function() {

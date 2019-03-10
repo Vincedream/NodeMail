@@ -8,28 +8,28 @@ const schedule = require("node-schedule"); //定时器任务库
 //配置项
 
 //纪念日
-let startDay = "2016/6/24";
+let startDay = "2015/3/11";
 //当地拼音,需要在下面的墨迹天气url确认
-const local = "zhejiang/hangzhou";
+const local = "beijing/haidian-district";
 
 //发送者邮箱厂家
 let EmianService = "126";
 //发送者邮箱账户SMTP授权码
 let EamilAuth = {
-  user: "xxx@126.com",
-  pass: "xxxx"
+  user: "huihui7987@126.com",
+  pass: "huihui920228wyyx"
 };
 //发送者昵称与邮箱地址
-let EmailFrom = '"vince" <xxxxx@126.com>';
+let EmailFrom = '"vince" <huihui7987@126.com>';
 
 //接收者邮箱地
-let EmailTo = "xxxxx@qq.com";
+let EmailTo = "huihui7987@126.com";
 //邮件主题
 let EmailSubject = "一封暖暖的小邮件";
 
 //每日发送时间
-let EmailHour = 5;
-let EmialMinminute= 20;
+let EmailHour = 10;
+let EmialMinminute= 05;
 
 // 爬取数据的url
 const OneUrl = "http://wufazhuce.com/";
@@ -171,6 +171,8 @@ function getAllDataAndSendMail(){
     console.log(today)
     let initDay = new Date(startDay);
     let lastDay = Math.floor((today - initDay) / 1000 / 60 / 60 / 24);
+    let startDay_H = new Date("2019/3/11");
+    let lastDay_H = Math.floor((today - startDay_H) / 1000 / 60 / 60 / 24);
     let todaystr =
       today.getFullYear() +
       " / " +
@@ -179,6 +181,7 @@ function getAllDataAndSendMail(){
       today.getDate();
     HtmlData["lastDay"] = lastDay;
     HtmlData["todaystr"] = todaystr;
+    HtmlData["lastDay_H"] = lastDay_H;
 
     Promise.all([getOneData(),getWeatherTips(),getWeatherData()]).then(
         function(data){

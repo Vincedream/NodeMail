@@ -1,3 +1,4 @@
+const sgMail = require('@sendgrid/mail');
 const superagent = require("superagent"); //发送网络请求获取DOM
 const cheerio = require("cheerio"); //能够像Jquery一样方便获取DOM节点
 const nodemailer = require("nodemailer"); //发送邮件的node插件
@@ -5,31 +6,49 @@ const ejs = require("ejs"); //ejs模版引擎
 const fs = require("fs"); //文件读写
 const path = require("path"); //路径配置
 const schedule = require("node-schedule"); //定时器任务库
+yaml = require('js-yaml'); //读取yaml配置文件
 //配置项
 
-//纪念日
-let startDay = "2016/6/24";
-//当地拼音,需要在下面的墨迹天气url确认
-const local = "zhejiang/hangzhou";
+//读取配置
+try {
+  var doc = yaml.safeLoad(fs.readFileSync('./_config.yaml', 'utf8'));
+  console.log(doc);
+} catch (e) {
+  console.log(e);
+}
 
-//发送者邮箱厂家
-let EmianService = "126";
-//发送者邮箱账户SMTP授权码
-let EamilAuth = {
-  user: "xxx@126.com",
-  pass: "xxxx"
-};
+
+//纪念日
+let startDay = doc.startDay;
+//当地拼音,需要在下面的墨迹天气url确认
+const local = doc.local;
+
+switch(doc.emailDelivery){
+  case "SMTP":
+  //发送者邮箱厂家
+  var emailService = doc.SMTP.emailService;
+  //发送者邮箱账户SMTP授权码
+  var EamilAuth = doc.SMTP.emailAuth
+    break
+  case "sendGrid":
+    var SENDGRID_API_KEY=doc.sendGrid.SENDGRID_API_KEY
+    break
+}
+
 //发送者昵称与邮箱地址
-let EmailFrom = '"vince" <xxxxx@126.com>';
+let EmailFrom = doc.emailFrom
 
 //接收者邮箱地
-let EmailTo = "xxxxx@qq.com";
+let EmailTo = doc.emailTo
 //邮件主题
-let EmailSubject = "一封暖暖的小邮件";
+let EmailSubject = doc.emailSubject
 
-//每日发送时间
-let EmailHour = 5;
-let EmialMinminute= 20;
+if(doc.schedule){
+  //每日发送时间
+var EmailHour = doc.emailHour
+var EmialMinminute= doc.emialMinminute;
+}
+
 
 // 爬取数据的url
 const OneUrl = "http://wufazhuce.com/";
@@ -141,7 +160,7 @@ function sendMail(HtmlData) {
     const html = template(HtmlData);
   
     let transporter = nodemailer.createTransport({
-      service: EmianService,
+      service: emailService,
       port: 465,
       secureConnection: true,
       auth: EamilAuth
@@ -163,8 +182,24 @@ function sendMail(HtmlData) {
     });
   }
 
+  //通过sendGrid进行email 发送
+function sendMailViaSendGrid(HtmlData){
+  const template = ejs.compile(
+    fs.readFileSync(path.resolve(__dirname, "email.ejs"), "utf8")
+  );
+  const html = template(HtmlData);
+  sgMail.setApiKey(SENDGRID_API_KEY);
+  const msg = {
+    to: EmailTo,
+    from: EmailFrom,
+    subject: EmailSubject,
+    html:html,
+  };
+ sgMail.send(msg).then(()=>{console.log('send to '+EmailTo)})
+}
+
 // 聚合
-function getAllDataAndSendMail(){
+ function getAllDataAndSendMail(){
     let HtmlData = {};
     // how long with
     let today = new Date();
@@ -185,7 +220,14 @@ function getAllDataAndSendMail(){
             HtmlData["todayOneData"] = data[0];
             HtmlData["weatherTip"] = data[1];
             HtmlData["threeDaysData"] = data[2];
-            sendMail(HtmlData)
+            switch(doc.emailDelivery){
+              case 'SMTP':
+                sendMail(HtmlData)
+                break
+              case 'sendGrid':
+                sendMailViaSendGrid(HtmlData)
+                break
+            }
         }
     ).catch(function(err){
         getAllDataAndSendMail() //再次获取
@@ -193,6 +235,7 @@ function getAllDataAndSendMail(){
     })
 }
 
+if(doc.schedule){
 let rule = new schedule.RecurrenceRule();
 rule.dayOfWeek = [0, new schedule.Range(1, 6)];
 rule.hour = EmailHour;
@@ -202,3 +245,8 @@ let j = schedule.scheduleJob(rule, function() {
   console.log("执行任务");
   getAllDataAndSendMail();
 });
+}
+else{
+  getAllDataAndSendMail();
+}
+
